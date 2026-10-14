@@ -1,0 +1,10 @@
+# secrets & runtime
+**/.env
+**/data/
+**/node_modules/
+*.log
+.tools/
+
+# OS / editor
+.DS_Store
+*.swp
