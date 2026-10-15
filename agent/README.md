@@ -69,6 +69,8 @@ cd /opt/weol-agent/agent
 # cp .env.example .env && nano .env
 
 mkdir -p data
+# если был EACCES на storage.json (том от root):
+#   sudo chown -R 1000:1000 data
 docker compose up -d --build
 docker compose logs -f --tail=50
 docker compose ps
