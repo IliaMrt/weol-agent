@@ -7,9 +7,9 @@ Wants=network-online.target
 Type=simple
 User=weol
 Group=weol
-WorkingDirectory=/opt/weol-agent
-EnvironmentFile=/opt/weol-agent/.env
-ExecStart=/usr/bin/node /opt/weol-agent/src/index.js
+WorkingDirectory=/opt/weol-agent/agent
+EnvironmentFile=/opt/weol-agent/agent/.env
+ExecStart=/usr/bin/node /opt/weol-agent/agent/src/index.js
 Restart=on-failure
 RestartSec=10
 # Chromium иногда хочет больше открытых файлов

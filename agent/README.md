@@ -54,76 +54,47 @@ openssl rand -hex 24
 - Ответ: `429` + `Retry-After`.
 - `/status` и `/health` лимит не трогают.
 
-## Развёртывание на Ubuntu / Debian
+## Развёртывание (Docker, рекомендуется)
 
-### 1. Node 20+
+Chromium внутри образа, `restart: unless-stopped` — сам поднимется после падения/ребута.
 
-```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt-get install -y nodejs
-```
-
-### 2. Каталог
-
-```bash
-sudo useradd --system --create-home --home-dir /opt/weol-agent --shell /usr/sbin/nologin weol
-sudo rsync -a ./agent/ /opt/weol-agent/
-sudo chown -R weol:weol /opt/weol-agent
-```
-
-### 3. npm + Chromium
+На сервере (уже есть клон):
 
 ```bash
 cd /opt/weol-agent
-sudo -u weol npm install
-sudo npx playwright install-deps chromium
-sudo -u weol npx playwright install chromium
+git pull
+
+cd /opt/weol-agent/agent
+# .env уже должен быть; иначе:
+# cp .env.example .env && nano .env
+
+mkdir -p data
+docker compose up -d --build
+docker compose logs -f --tail=50
+docker compose ps
+ss -tulpn | grep 8787
 ```
 
-### 4. `.env`
+Полезное:
 
 ```bash
-sudo -u weol cp .env.example .env
-sudo -u weol nano .env
+docker compose restart
+docker compose logs -f
+docker compose down          # остановить
+curl -s "http://127.0.0.1:8787/<PUBLIC_PATH>/status"
 ```
 
-Обязательно:
+`data/` монтируется с хоста — сессия Bitrix переживает пересборку контейнера.
 
-- `WEOL_LOGIN` / `WEOL_PASSWORD`
-- `PUBLIC_PATH=$(openssl rand -hex 24)` — сохранить ссылки в парольный менеджер
-- `PUBLIC_BASE_URL=http://ВАШ_IP:8787`
-- `HTTP_HOST=0.0.0.0`
+## Альтернатива: systemd (без Docker)
 
-### 5. Файрвол
+См. `systemd/weol-agent.service`. Нужны Node 20+, `npm install`, `npx playwright install chromium`.
 
-```bash
-sudo ufw allow 8787/tcp
-# или только со своего IP:
-# sudo ufw allow from YOUR.IP.ADDR to any port 8787
-```
-
-### 6. Проверка и systemd
-
-```bash
-sudo -u weol npm run login-test
-sudo cp systemd/weol-agent.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now weol-agent
-journalctl -u weol-agent -n 30
-```
-
-В логе будут полные ссылки `IN` / `OUT`.
-
-### 7. Вызов с телефона / закладки
-
-Открыть в браузере сохранённую ссылку `/…/in` или `/…/out`.  
-Ответ JSON `{"ok":true,...}` — команда ушла в WEOl.
-
-## Локально
+## Локально без Docker
 
 ```bash
 cd agent
-cp .env.example .env   # логин, пароль, PUBLIC_PATH
+cp .env.example .env
 npm install && npx playwright install chromium
 npm start
 ```
